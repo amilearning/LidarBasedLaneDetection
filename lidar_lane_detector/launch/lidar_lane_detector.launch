@@ -1,0 +1,10 @@
+<launch>
+    
+    
+    
+    
+    
+    <node name="lidar_lane_detector" pkg="lidar_lane_detector" type="lidar_lane_detector" output="screen">
+    </node>
+    
+</launch>
