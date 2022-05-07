@@ -58,6 +58,8 @@ Detector::Detector(ros::NodeHandle* nh){
     pub_box = nh->advertise<pcl::PCLPointCloud2>("roi", 1); // ROI - region of interest
     pub_pobroad = nh->advertise<pcl::PCLPointCloud2>("road_probably", 1);
     pub_marker = nh->advertise<visualization_msgs::MarkerArray>("road_marker", 1);
+    pub_lanes_marker = nh->advertise<visualization_msgs::MarkerArray>("lane_marker", 1);
+    
     nh->param<double>("histogramBinResolution", histogramBinResolution, 0.2);
     nh->param<double>("lanewidth", lanewidth, 4.0);
     nh->param<double>("horizontal_BinResolution", horizontalBinResolution, 0.8);
@@ -430,9 +432,11 @@ if(lane_filterd_yvals.size() == 1){
     // Only single lane is detected  
     if(lane_filterd_yvals[0] > 0){
         // possibly right lane 
-        ROS_INFO("only right lane");       
+        ROS_INFO("only right lane");   
+         DetectLanes(cloud_filtered_Road_ptr, lane_filterd_yvals);    
     }else{
         ROS_INFO("only left lane");
+         DetectLanes(cloud_filtered_Road_ptr, lane_filterd_yvals);
         // possibly left lane 
     }
     

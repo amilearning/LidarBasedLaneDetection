@@ -143,7 +143,9 @@ class Detector{
 
     void DetectLanes(pcl::PointCloud<pcl::PointXYZI>::Ptr cloudPtr,std::vector<double> startLanePoints);
 
-    auto polyfit(std::vector<double> x, std::vector<double> y);
+    PolyFit<double> polyfit(std::vector<double> x, std::vector<double> y);
+
+    void visualize_lanes(std::vector<std::vector<double>> lanes_points_x, std::vector<std::vector<double>> lanes_points_y,std::vector<std::vector<double>> lanes_points_z);
 
     private:
     ros::Publisher pub_road;        
@@ -151,6 +153,8 @@ class Detector{
     ros::Publisher pub_box;         
     ros::Publisher pub_pobroad;    
     ros::Publisher pub_marker;      
+    ros::Publisher pub_lanes_marker;      
+
 
     ros::Subscriber sub;
 
@@ -159,6 +163,8 @@ class Detector{
     double lanewidth;
     double horizontalBinResolution;
     double verticalBinResolution;
+    double poly_error;
+    bool polyfit_error;
     // logging logger;
     
 

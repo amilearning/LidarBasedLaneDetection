@@ -256,9 +256,17 @@ Visualization Manager:
       Radius: 0.10000000149011612
       Reference Frame: <Fixed Frame>
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /urban_road_filter/lane_marker
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
-    Background Color: 255; 255; 255
+    Background Color: 0; 0; 0
     Default Light: true
     Fixed Frame: os_sensor
     Frame Rate: 30
@@ -284,25 +292,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 12.85580062866211
+      Distance: 12.454437255859375
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 3.372633218765259
-        Y: -1.5750842094421387
-        Z: 1.8442716598510742
+        X: 5.847469329833984
+        Y: -2.071533441543579
+        Z: 3.957319974899292
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6503982543945312
+      Pitch: 0.7753981351852417
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.065397024154663
+      Yaw: 3.140397310256958
     Saved: ~
 Window Geometry:
   Displays:
@@ -323,4 +331,4 @@ Window Geometry:
     collapsed: true
   Width: 1267
   X: 454
-  Y: 118
+  Y: 88

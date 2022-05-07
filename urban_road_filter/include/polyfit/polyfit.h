@@ -236,6 +236,9 @@ class PolyFit
           yM.rows() == V.rows());
 
       T mse = 0.0;
+      if (pCoef.size() <1){
+        return 1e8;
+      }
       Eigen::VectorXd diff = ((V*pCoef).array() - yM.col(0).array());
       for (int i=0; i<diff.rows(); ++i)
         mse += pow(diff(i),2);
