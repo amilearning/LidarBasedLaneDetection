@@ -96,6 +96,16 @@ std::vector<double> binStartY = linspace(params::min_Y,params::max_Y,numBins);
 
 
 
+void Detector::nearlaneFilter(std::vector<double>& lane_filterd_yvals, std::vector<double>& detected_peak, std::vector<double> yvals,std::vector<double> peaks){
+    lane_filterd_yvals.clear();
+    for (size_t i = 0; i < yvals.size(); ++i ){ 
+    if(fabs(yvals[i]) > params::lanewidth+0.2){
+      continue; // 
+    }
+      lane_filterd_yvals.push_back(yvals[i]);        
+      detected_peak.push_back(peaks[i]);    
+    }
+}
 
 
 void Detector::lanewidthFilter(std::vector<double>& lane_filterd_yvals, std::vector<double>& detected_peak, std::vector<double> yvals,std::vector<double> peaks){
@@ -115,7 +125,7 @@ void Detector::lanewidthFilter(std::vector<double>& lane_filterd_yvals, std::vec
       if(yvals[j] < 0){
         continue; // filter only right lanes
       }     
-      double tmp_val = fabs(lanewidth - (yvals[i]- yvals[j]));
+      double tmp_val = fabs(params::lanewidth - (yvals[i]- yvals[j]));
       row_.push_back(tmp_val);
       // diff[i][j] = fabs(lanewidth - (yvals[i]- yvals[j]));
       if(min_tmp > tmp_val){
@@ -158,7 +168,7 @@ void Detector::lanewidthFilter(std::vector<double>& lane_filterd_yvals, std::vec
 void Detector::DetectLanes(pcl::PointCloud<pcl::PointXYZI>::Ptr cloudPtr,std::vector<double> startLanePoints){
     //  double horizontalBinResolution;
     //     double verticalBinResolution
-    int numVerticalBins = ceil((params::max_X - params::min_X)/verticalBinResolution);
+    int numVerticalBins = ceil((params::max_X - params::min_X)/params::verticalBinResolution);
     int numLanes = startLanePoints.size();
     // 
     double verticalBins[numVerticalBins][3][numLanes];
@@ -178,7 +188,7 @@ void Detector::DetectLanes(pcl::PointCloud<pcl::PointXYZI>::Ptr cloudPtr,std::ve
       for (int j=0; j < numLanes; j++){
         double laneStartY = startLanePoints[j]; 
         // Define a vertical roi window 
-        double roi[4] = {laneStartX[i], laneStartX[i+1],laneStartY - horizontalBinResolution/2,laneStartY + horizontalBinResolution/2};
+        double roi[4] = {laneStartX[i], laneStartX[i+1],laneStartY - params::horizontalBinResolution/2,laneStartY + params::horizontalBinResolution/2};
     
         auto filterCondition = boost::make_shared<FilteringCondition<pcl::PointXYZI>>(
             [=](const pcl::PointXYZI& point){
@@ -232,19 +242,16 @@ void Detector::DetectLanes(pcl::PointCloud<pcl::PointXYZI>::Ptr cloudPtr,std::ve
                 }           
                 auto tt = f.getCoefficients();
                 poly_error = f.getMSE();         
-                // std::cout << "coeefienct"<< std::endl;
-                // std::cout << f << std::endl;
-                // std::cout << "~~~"<< std::endl;
+                
                 if(poly_error < 0.1){
-
                     std::vector<double> xval;
                     xval.push_back((roi[0] + roi[1])/2);
                     std::vector<double> yval = f.evalPoly(xval);                    
                     // Use error to regularize the value of predicted y
                     yval[0] = yval[0] - poly_error*fabs(yval[0]);
                     startLanePoints[j] = yval[0];
-                    roi[2] = yval[0] - horizontalBinResolution;
-                    roi[3] = yval[0] + horizontalBinResolution;                    
+                    roi[2] = yval[0] - params::horizontalBinResolution;
+                    roi[3] = yval[0] + params::horizontalBinResolution;                    
                     // % Update the lane point with the centre of the
                     // % predicted window
                     auto filterCondition_update = boost::make_shared<FilteringCondition<pcl::PointXYZI>>(
@@ -261,7 +268,7 @@ void Detector::DetectLanes(pcl::PointCloud<pcl::PointXYZI>::Ptr cloudPtr,std::ve
                     double zmean;
                     int counter_update = 0;
                     for (pcl::PointCloud<pcl::PointXYZI>::const_iterator it = roi_points_tmp->begin(); it != roi_points_tmp->end(); it++) {
-                          zmean+=it->intensity;          
+                          zmean+=it->z;          
                           counter_update ++;           
                       }
                     zmean = zmean / (counter_update+1e-6);
@@ -269,8 +276,8 @@ void Detector::DetectLanes(pcl::PointCloud<pcl::PointXYZI>::Ptr cloudPtr,std::ve
                     verticalBins[i][1][j] = yval[0];
                     verticalBins[i][2][j] = zmean;
                 }else{
-                    roi[2] = startLanePoints[j] - horizontalBinResolution;
-                    roi[3] = startLanePoints[j] + horizontalBinResolution;
+                    roi[2] = startLanePoints[j] - params::horizontalBinResolution;
+                    roi[3] = startLanePoints[j] + params::horizontalBinResolution;
                 }
                   
               // }else if(value_x.size() == 2){
@@ -314,11 +321,18 @@ void Detector::DetectLanes(pcl::PointCloud<pcl::PointXYZI>::Ptr cloudPtr,std::ve
     std::vector<double> xeval = linspace(params::min_X,params::max_X,80);
     std::vector<PolyFit<double>> fs;
     std::vector<double> poly_errors;
-    double min_error;
-    int min_idx;
+    double min_error=1e10;
+    int min_idx=0;
+    int loop_count = 0;
     for(int i=0; i < lanes_points_x.size(); i++){
+          double max_x_point_ = *std::max_element(std::begin(lanes_points_x[i]), std::end(lanes_points_x[i]));
+          if(max_x_point_ < ((params::max_X - params::min_X)*params::vertical_point_filter)){
+              // if the number of collected points are less then the half of the length, then do not proceed polyfit
+              ROS_WARN("skip lane ponints");
+              continue;
+          }
       PolyFit<double> tmpf = polyfit(lanes_points_x[i], lanes_points_y[i]);
-      
+
                 if(polyfit_error){
                   ROS_WARN("No solution found from polyfit"); 
                   return; 
@@ -327,22 +341,89 @@ void Detector::DetectLanes(pcl::PointCloud<pcl::PointXYZI>::Ptr cloudPtr,std::ve
       poly_errors.push_back(tmpf.getMSE());
       if(min_error > poly_errors.back()){
         min_error = poly_errors.back();
-        min_idx = i;
+        min_idx = loop_count;
       }
-      std::vector<double> yeval = fs[i].evalPoly(xeval);
+      std::vector<double> yeval = fs[loop_count].evalPoly(xeval);
       final_lanes_points_x.push_back(xeval);
       final_lanes_points_y.push_back(yeval);
       std::vector<double> z_tmp(xeval.size(),0);
       final_lanes_points_z.push_back(z_tmp);
+      loop_count++;
+    }
+    
+    
+
+   if(params::single_lane_only){
+      if(fs.size() <1 ){
+        return;
+      }     
+      std::vector<std::vector<double>> final_single_lanes_points_x, final_single_lanes_points_y, final_single_lanes_points_z;    
+      final_single_lanes_points_x.push_back(final_lanes_points_x[min_idx]);
+      final_single_lanes_points_y.push_back(final_lanes_points_y[min_idx]);      
+      final_single_lanes_points_z.push_back(final_lanes_points_z[min_idx]);
+      //Shift the lane with the lowest error only 
+      Eigen::Matrix<double, Eigen::Dynamic, 1> Pcoef_tmp = fs[min_idx].getCoefficients();
+      if(Pcoef_tmp.size() > 2){     
+            PolyFit<double>neigh_fit(fs[min_idx]); 
+            if(final_lanes_points_y[min_idx][0] < 0){ 
+                      Pcoef_tmp(2,0) = Pcoef_tmp(2,0)+params::lanewidth;             
+            }else{
+                      Pcoef_tmp(2,0) = Pcoef_tmp(2,0)-params::lanewidth; 
+            }
+            neigh_fit.setCoefficients(Pcoef_tmp);
+            std::vector<double> yeval_neigh = neigh_fit.evalPoly(xeval);
+            final_single_lanes_points_x.push_back(xeval);
+            final_single_lanes_points_y.push_back(yeval_neigh);
+            std::vector<double> z_tmp(xeval.size(),0);
+            final_single_lanes_points_z.push_back(z_tmp);
+      }else{
+        ROS_WARN("single lane shift fail");        
+        return;
+      }
+
+
+
+
+ for(int i= 0 ; i < final_single_lanes_points_y.size(); i++){
+      std::cout << final_single_lanes_points_y[i][0] << std::endl;
+    }
+  visualize_lanes(final_single_lanes_points_x,final_single_lanes_points_y,final_single_lanes_points_z);
+
+
+      
+   }else{//////////////////////////////////////
+      // multi lane detection //
+      //////////////////////////////////////
+     // Shift polynomials to create the neighboring lanes 
+    for(int i=0;i < fs.size() ; i++){
+      Eigen::Matrix<double, Eigen::Dynamic, 1> Pcoef_tmp = fs[i].getCoefficients();
+      if(Pcoef_tmp.size() > 2){     
+            PolyFit<double>neigh_fit(fs[i]); 
+            if(final_lanes_points_y[i][0] < 0){ 
+                      Pcoef_tmp(2,0) = Pcoef_tmp(2,0)+params::lanewidth;             
+            }else{
+                      Pcoef_tmp(2,0) = Pcoef_tmp(2,0)-params::lanewidth; 
+            }
+            neigh_fit.setCoefficients(Pcoef_tmp);
+            std::vector<double> yeval_neigh = neigh_fit.evalPoly(xeval);
+            final_lanes_points_x.push_back(xeval);
+            final_lanes_points_y.push_back(yeval_neigh);
+            std::vector<double> z_tmp(xeval.size(),0);
+            final_lanes_points_z.push_back(z_tmp);
+      }else{
+        continue;
+      }      
     }
 
-    
-    
-    
-   
-
+    for(int i= 0 ; i < final_lanes_points_y.size(); i++){
+      std::cout << final_lanes_points_y[i][0] << std::endl;
+    }
   visualize_lanes(final_lanes_points_x,final_lanes_points_y,final_lanes_points_z);
   
+   }
+   
+   
+    
 
   
 }
@@ -356,22 +437,21 @@ void Detector::visualize_lanes(std::vector<std::vector<double>> lanes_points_x, 
     std_msgs::ColorRGBA lane_color;
     setColor(&lane_color, 0.0, 1.0, 0.0, 1.0);
     
-
+  // fill out lane line
+  for (int i=0; i < lanes_points_x.size(); i++){
     visualization_msgs::Marker lane_strip;
-    
     lane_strip.header.stamp = ros::Time::now();
     lane_strip.header.frame_id = params::fixedFrame;
     lane_strip.color = lane_color;
     lane_strip.action = visualization_msgs::Marker::ADD;          
     lane_strip.ns = "lanes";
-    lane_strip.type = visualization_msgs::Marker::POINTS;
-    lane_strip.scale.x = 1.0;
-    lane_strip.scale.y = 1.0;
-    lane_strip.scale.z = 1.0;
-    // lane_strip.lifetime = ros::Duration(1.0);
-    lane_strip.id = 200;
-  // fill out lane line
-  for (int i=0; i < lanes_points_x.size(); i++){
+    lane_strip.type = visualization_msgs::Marker::LINE_STRIP;
+    lane_strip.scale.x = 0.5;
+    lane_strip.scale.y = 0.5;
+    lane_strip.scale.z = 0.1;
+    lane_strip.lifetime = ros::Duration(0.1);
+    lane_strip.id = 200+i;
+
     for(int j=0; j < lanes_points_x[i].size(); j++){
       geometry_msgs::Point p;
     p.x = lanes_points_x[i][j];
@@ -380,9 +460,10 @@ void Detector::visualize_lanes(std::vector<std::vector<double>> lanes_points_x, 
     
     lane_strip.points.push_back(p);
     }    
+    lane_strips.markers.push_back(lane_strip);
   }
 
-  lane_strips.markers.push_back(lane_strip);
+
 
   pub_lanes_marker.publish(lane_strips);
 }

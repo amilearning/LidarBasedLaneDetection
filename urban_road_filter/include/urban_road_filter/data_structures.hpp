@@ -95,6 +95,16 @@ namespace params{
   extern float polysimp;                                 /*polygon-egyszerűsítési tényező (Ramer-Douglas-Peucker)*/
   extern float polyz;                                   /*manuálisan megadott z-koordináta (polygon)*/
   extern double Polyfit_tolerance;
+  extern double histogramBinResolution;
+  extern double vertical_point_filter;
+  extern double lanewidth;
+  extern double horizontalBinResolution;
+  extern double verticalBinResolution;
+  extern bool road_filtering;
+  extern bool lane_filter;
+  extern bool single_lane_only;
+
+
 };
 /*For pointcloud filtering*/
 template <typename PointT>
@@ -140,7 +150,7 @@ class Detector{
     void computeHistogram(int numBins, pcl::PointCloud<pcl::PointXYZI>::Ptr cloudPtr, std::vector<double>& histval, std::vector<double>& yvals);
     
     void lanewidthFilter(std::vector<double>& lane_filterd_yvals, std::vector<double>& detected_peak, std::vector<double> yvals,std::vector<double> peaks);
-
+    void nearlaneFilter(std::vector<double>& lane_filterd_yvals, std::vector<double>& detected_peak, std::vector<double> yvals,std::vector<double> peaks);
     void DetectLanes(pcl::PointCloud<pcl::PointXYZI>::Ptr cloudPtr,std::vector<double> startLanePoints);
 
     PolyFit<double> polyfit(std::vector<double> x, std::vector<double> y);

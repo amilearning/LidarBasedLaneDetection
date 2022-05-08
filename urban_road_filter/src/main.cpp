@@ -29,7 +29,16 @@ void paramsCallback(urban_road_filter::LidarFiltersConfig &config, uint32_t leve
     params::polysimp = config.poly_s_param;
     params::zavg_allow = config.poly_z_avg_allow;
     params::polyz = config.poly_z_manual;
+
+    params::road_filtering = config.road_filtering;
     params::Polyfit_tolerance = config.Polyfit_tolerance;
+    params::lane_filter = config.lane_filter;
+    params::histogramBinResolution =config.histogramBinResolution;
+    params::lanewidth =config.lanewidth;
+    params::horizontalBinResolution =config.horizontal_BinResolution;
+    params::verticalBinResolution =config.vertical_BinResolution;
+    params::vertical_point_filter = config.vertical_point_filter;
+    params::single_lane_only = config.single_lane_only;
     ROS_INFO("Updated params %s", ros::this_node::getName().c_str());
 }
 

@@ -64,7 +64,8 @@ class PolyFit
       double tolerance; // Pt. to model thr. for inliers
     };
 
-  private:
+  // private:
+    public:
 
 #if BOOST_VERSION >= 104700
     // RNG
@@ -107,6 +108,10 @@ class PolyFit
 
     const VecType getCoefficients() const { return pCoef; }
 
+    // Public setter methods 
+    
+    void setCoefficients(VecType new_pCoef){pCoef = new_pCoef;}
+
     // Constructor
     PolyFit(std::vector<T> &x, std::vector<T> &y, Options &options): 
       x(x), y(y), options(options) 
@@ -127,6 +132,16 @@ class PolyFit
       dataToEigen();
     }
 
+    PolyFit(const PolyFit<T>& f_): 
+      x(f_.x), y(f_.y), options(f_.options)
+    {
+      xM = f_.xM;
+      yM = f_.yM;
+          // Polynomial coefficients
+      pCoef = f_.pCoef;
+      V = f_.V;
+    
+    }
     // Evaluate polynomial at positions in 'at'
     std::vector<T> evalPoly(const std::vector<T> &at)
     { 

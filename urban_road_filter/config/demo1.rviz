@@ -5,7 +5,6 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /left ouster1
         - /road1
       Splitter Ratio: 0.41916167736053467
     Tree Height: 245
@@ -107,11 +106,11 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: true
       Max Color: 255; 255; 255
       Max Intensity: 2000
-      Min Color: 0; 0; 0
+      Min Color: 46; 52; 54
       Min Intensity: 0
       Name: left ouster
       Position Transformer: XYZ
@@ -124,7 +123,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: false
       Autocompute Value Bounds:
@@ -199,8 +198,8 @@ Visualization Manager:
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
-      Max Color: 52; 101; 164
-      Min Color: 252; 233; 79
+      Max Color: 0; 0; 0
+      Min Color: 238; 238; 236
       Name: road
       Position Transformer: XYZ
       Queue Size: 10
@@ -259,9 +258,9 @@ Visualization Manager:
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /urban_road_filter/lane_marker
-      Name: MarkerArray
+      Name: lanes
       Namespaces:
-        {}
+        lanes: true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -292,25 +291,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 12.454437255859375
+      Distance: 12.22050952911377
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 5.847469329833984
-        Y: -2.071533441543579
-        Z: 3.957319974899292
+        X: 9.099190711975098
+        Y: -1.665724277496338
+        Z: -0.813890278339386
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7753981351852417
+      Pitch: 0.1403990089893341
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.140397310256958
+      Yaw: 3.0753955841064453
     Saved: ~
 Window Geometry:
   Displays:

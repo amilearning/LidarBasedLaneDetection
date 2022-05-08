@@ -14,13 +14,20 @@ float       params::min_X,
             params::max_Y,
             params::min_Z,
             params::max_Z;                  //dimensions of detection area
-
+double      params::vertical_point_filter;
 bool        params::polysimp_allow = true;  //enable polygon simplification
 bool        params::zavg_allow = true;      //enable usage of average 'z' value as polygon height
 float       params::polysimp = 0.5;         //coefficient of polygon simplification (ramer-douglas-peucker)
 float       params::polyz = -1.5;           //manually set z-coordinate (output polygon)
 double      params::Polyfit_tolerance = 0.01;
+bool        params::road_filtering = true;
+bool        params::lane_filter = true;
 
+double      params::histogramBinResolution = 0.2;
+double      params::lanewidth = 3.0;
+double      params::horizontalBinResolution = 0.4;
+double      params::verticalBinResolution = 2.0;
+bool        params::single_lane_only = true;
 int         ghostcount = 0;                 //counter variable helping to remove obsolete markers (ghosts)
 
 void marker_init(visualization_msgs::Marker& m)
@@ -60,10 +67,10 @@ Detector::Detector(ros::NodeHandle* nh){
     pub_marker = nh->advertise<visualization_msgs::MarkerArray>("road_marker", 1);
     pub_lanes_marker = nh->advertise<visualization_msgs::MarkerArray>("lane_marker", 1);
     
-    nh->param<double>("histogramBinResolution", histogramBinResolution, 0.2);
-    nh->param<double>("lanewidth", lanewidth, 4.0);
-    nh->param<double>("horizontal_BinResolution", horizontalBinResolution, 0.8);
-    nh->param<double>("vertical_BinResolution", verticalBinResolution, 1);
+    // nh->param<double>("histogramBinResolution", histogramBinResolution, 0.2);
+    // nh->param<double>("lanewidth", lanewidth, 4.0);
+    // nh->param<double>("horizontal_BinResolution", horizontalBinResolution, 0.8);
+    // nh->param<double>("vertical_BinResolution", verticalBinResolution, 1);
     
     
     // // logger for polyfit
@@ -129,6 +136,7 @@ void Detector::filtered(const pcl::PointCloud<pcl::PointXYZI> &cloud){
         [=](const pcl::PointXYZI& point){
             return point.x >= params::min_X && point.x <= params::max_X &&
             point.y >= params::min_Y && point.y <= params::max_Y &&
+            // point.y >= -1*point.x*fabs(params::min_Y) && point.y <= point.x*fabs(params::max_Y) &&
             point.z >= params::min_Z && point.z <= params::max_Z &&
             point.x + point.y + point.z != 0;
         }
@@ -398,12 +406,19 @@ void Detector::filtered(const pcl::PointCloud<pcl::PointXYZI> &cloud){
 // Lane Detection begins from fitered road area 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered_Road_ptr;
+// cloud_filtered_Box
+if(params::road_filtering){
+    cloud_filtered_Road_ptr  = pcl::PointCloud<pcl::PointXYZI>::Ptr (new pcl::PointCloud<pcl::PointXYZI> (cloud_filtered_Road));
+}else{
+     cloud_filtered_Road_ptr = pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>(*cloud_filtered_Box));    
+}
 
+// cloud_filtered_Road
 
-pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered_Road_ptr (new pcl::PointCloud<pcl::PointXYZI> (cloud_filtered_Road));
 
 // Peak Intensity Detection
-int numBins = ceil((params::max_Y - params::min_Y)/histogramBinResolution);
+int numBins = ceil((params::max_Y - params::min_Y)/params::histogramBinResolution);
 std::vector<double> histVal(numBins-1), yvals(numBins-1); 
 
 computeHistogram(numBins, cloud_filtered_Road_ptr, histVal, yvals);
@@ -426,7 +441,17 @@ for (std::vector<int>::const_iterator it = peak_idxs.begin(); it != peak_idxs.en
 
 // Further filter the possible lane points based on lane width
 std::vector<double> lane_filterd_yvals, detected_peak;
-lanewidthFilter(lane_filterd_yvals, detected_peak, startYs, pkHistVal);
+if(params::lane_filter){
+    // lanewidthFilter(lane_filterd_yvals, detected_peak, startYs, pkHistVal);
+    nearlaneFilter(lane_filterd_yvals, detected_peak, startYs, pkHistVal);
+    if(lane_filterd_yvals.size() == 0){
+        ROS_WARN("no detected lane inside of the range");
+    }
+}else{
+    std::vector<double>::iterator itr;
+    std::copy(startYs.begin(), startYs.end(), std::inserter(lane_filterd_yvals,itr));
+}
+
 
 if(lane_filterd_yvals.size() == 1){
     // Only single lane is detected  
@@ -451,8 +476,8 @@ if(lane_filterd_yvals.size() == 1){
 
 //
 double lane_filterd_yvals_value = lane_filterd_yvals[0];
-std::copy(lane_filterd_yvals.begin(), lane_filterd_yvals.end(), std::ostream_iterator<int>(std::cout, " "));
-std::cout << " " << std::endl;
+// std::copy(lane_filterd_yvals.begin(), lane_filterd_yvals.end(), std::ostream_iterator<int>(std::cout, " "));
+// std::cout << " " << std::endl;
  
 
 
